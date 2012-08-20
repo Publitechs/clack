@@ -12,8 +12,7 @@
   (:import-from :trivial-types
                 :property-list)
   (:import-from :alexandria
-                :when-let
-                :make-keyword)
+                :when-let)
   (:import-from :flexi-streams
                 :make-external-format
                 :make-flexi-stream)
@@ -248,6 +247,29 @@ on an original raw-body."
         append (list (make-keyword k)
                      ;; KLUDGE: calls `ignore-errors'.
                      (or (ignore-errors (clack.util.hunchentoot:url-decode v)) v))))
+
+;; TODO: move to utils
+(defun string-invert (str)
+  (declare (optimize (speed 3) (compilation-speed 0) (debug 0) (safety 0))
+    (simple-string str) (bit up) (bit down))
+  (let ((up 0) (down 0))
+    (block skip
+      (loop for char of-type character across str do
+               (if (upper-case-p char) (setf up 1))
+               (if (lower-case-p char) (setf down 1))
+               (if (= up down 1) (return-from skip str)))
+      (if (= up 0) (string-upcase str) (string-downcase str)))))
+
+(defun respect-readtable-case (str)
+  (case (readtable-case *readtable*)
+    (:upcase (string-upcase str))
+    (:downcase (string-downcase str))
+    (:preserve str)
+    (:invert (string-invert str))))
+
+(defun make-keyword (name)
+  "Interns the string designated by NAME in the KEYWORD package with respect to *readtable* case."
+  (intern (respect-readtable-case (string name)) :keyword))
 
 (defun parse-content-type (content-type)
   "Parse Content-Type from Request header."
