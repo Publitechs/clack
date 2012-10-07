@@ -31,6 +31,7 @@
                 :parse-rfc2388-form-data)
   (:import-from :clack.util.stream
                 :ensure-character-input-stream)
+  (:shadow :make-keyword) ;; because of conflict with alexandria
   (:export :env
            :request-method
            :script-name
